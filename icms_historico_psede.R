@@ -59,7 +59,7 @@ df_2021 <- x2021 %>%
     values_to = 'Valor'
   ) %>%
   mutate(Mês = tolower(Mês),
-         Data = dmy(paste0("01 ", Mês, " 2023"), locale = "pt_BR"))
+         Data = dmy(paste0("01 ", Mês, " 2021"), locale = "pt_BR"))
 ## -- 2020
 x2020 <- readxl::read_xlsx("2020.xlsx")
 
@@ -78,7 +78,7 @@ df_2020 <- x2020 %>%
     values_to = 'Valor'
   ) %>%
   mutate(Mês = tolower(Mês),
-         Data = dmy(paste0("01 ", Mês, " 2021"), locale = "pt_BR"))
+         Data = dmy(paste0("01 ", Mês, " 2020"), locale = "pt_BR"))
 ## -- 2019
 x2019 <- readxl::read_xlsx("2019.xlsx")
 
@@ -99,7 +99,7 @@ df_2019 <- x2019 %>%
   mutate(Mês = tolower(Mês),
          Data = dmy(paste0("01 ", Mês, " 2019"), locale = "pt_BR"))
 df_2019 <- df_2019 %>%
-  mutate(Municipio = stringr::str_sub(Municipio, 6))
+  mutate(Municipio = stringr::str_sub(Municipio, 7))
 
 ## -- 2018
 x2018 <- readxl::read_xlsx("2018.xlsx", skip = 1)
@@ -120,7 +120,7 @@ df_2018 <- x2018 %>%
   ) %>%
   mutate(Mês = tolower(Mês),
          Data = dmy(paste0("01 ", Mês, " 2018"), locale = "pt_BR"))
-df_2018 <- df_2018 %>% mutate(Municipio = stringr::str_sub(Municipio, 6))
+df_2018 <- df_2018 %>% mutate(Municipio = stringr::str_sub(Municipio, 7))
 
 ## -- 2017
 x2017 <- readxl::read_xlsx("2017.xlsx", skip = 1)
@@ -141,7 +141,7 @@ df_2017 <- x2017 %>%
   ) %>%
   mutate(Mês = tolower(Mês),
          Data = dmy(paste0("01 ", Mês, " 2017"), locale = "pt_BR"))
-df_2017 <- df_2017 %>% mutate(Municipio = stringr::str_sub(Municipio, 6))
+df_2017 <- df_2017 %>% mutate(Municipio = stringr::str_sub(Municipio, 7))
 
 ## -- 2016
 arquivo <- "2016.xlsx"
@@ -151,19 +151,37 @@ x2016 <- map_dfr(meses, ~ readxl::read_xlsx(arquivo, sheet = .x) %>%
 x2016 <- x2016[5:42858,]
 
 x2016 <- x2016 %>% rename(Estado = `ARRECADAÇÃO DE ICMS E OUTRAS RECEITAS POR MUNICÍPIO`) %>% 
-  fill(Estado) %>% 
-  filter(nchar(Estado) == 2 & ...3 == "ICMS") %>% 
-  rename(Imposto = ...3) %>% 
-  rename(Municipio = ...2)
-x2016 <- x2016 %>% filter(Estado %in% c("MG")) 
+  rename(Valor = ...5) %>% 
+  rename(Municipio = ...4)
+x2016 <- x2016 %>% filter(Estado %in% c("MG"))  %>% 
+  select(Municipio,Valor,Mês)
 
 df_2016 <- x2016 %>%
-  select(c(-Estado, -Total, -Imposto)) %>% 
-  pivot_longer(
-    cols = -Municipio,  
-    names_to = 'Mês',
-    values_to = 'Valor'
-  ) %>%
-  mutate(Mês = tolower(Mês),
-         Data = dmy(paste0("01 ", Mês, " 2016"), locale = "pt_BR"))
-df_2016 <- df_2016 %>% mutate(Municipio = stringr::str_sub(Municipio, 6))
+  mutate(Data = dmy(paste0("01 ", Mês), locale = "pt_BR"))
+df_2016 <- df_2016 %>%
+  mutate(Mês = stringr::str_sub(Mês, 1, nchar(Mês) - 5)) %>% 
+  select(Municipio,Mês,Valor,Data)
+df_2016$Valor <- as.numeric(df_2016$Valor)
+
+## -- 2015
+arquivo <- "2015.xlsx"
+meses <- readxl::excel_sheets(arquivo)
+x2015 <- map_dfr(meses, ~ readxl::read_xlsx(arquivo, sheet = .x) %>%
+                   mutate(Mês = .x))
+x2015 <- x2015[5:42858,]
+
+x2015 <- x2015 %>% rename(Estado = `ARRECADAÇÃO DE ICMS E OUTRAS RECEITAS POR MUNICÍPIO`) %>% 
+  rename(Valor = ...5) %>% 
+  rename(Municipio = ...4)
+x2015 <- x2015 %>% filter(Estado %in% c("MG"))  %>% 
+  select(Municipio,Valor,Mês)
+
+df_2015 <- x2015 %>%
+  mutate(Data = dmy(paste0("01 ", Mês), locale = "pt_BR"))
+df_2015 <- df_2015 %>%
+  mutate(Mês = stringr::str_sub(Mês, 1, nchar(Mês) - 5)) %>% 
+  select(Municipio,Mês,Valor,Data) 
+df_2015$Valor <- as.numeric(df_2015$Valor)
+
+`Historico ICMS 2015-2023` <- bind_rows(df_2015,df_2016,df_2017,df_2018,df_2019,df_2020,df_2021,df_2022,df_2023)
+writexl::write_xlsx(`Historico ICMS 2015-2023`, "Historico ICMS 2015-2023.xlsx")
