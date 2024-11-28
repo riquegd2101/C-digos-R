@@ -88,7 +88,7 @@ df_2021 <- x2021 %>%
     values_to = 'Valor'
   ) %>%
   mutate(Mês = tolower(Mês),
-         Data = dmy(paste0("01 ", Mês, " 2023"), locale = "pt_BR"))
+         Data = dmy(paste0("01 ", Mês, " 2021"), locale = "pt_BR"))
 ## -- 2020
 x2020 <- readxl::read_xlsx("2020.xlsx")
 
@@ -107,7 +107,7 @@ df_2020 <- x2020 %>%
     values_to = 'Valor'
   ) %>%
   mutate(Mês = tolower(Mês),
-         Data = dmy(paste0("01 ", Mês, " 2021"), locale = "pt_BR"))
+         Data = dmy(paste0("01 ", Mês, " 2020"), locale = "pt_BR"))
 ## -- 2019
 x2019 <- readxl::read_xlsx("2019.xlsx")
 
@@ -128,7 +128,7 @@ df_2019 <- x2019 %>%
   mutate(Mês = tolower(Mês),
          Data = dmy(paste0("01 ", Mês, " 2019"), locale = "pt_BR"))
 df_2019 <- df_2019 %>%
-  mutate(Municipio = stringr::str_sub(Municipio, 6))
+  mutate(Municipio = stringr::str_sub(Municipio, 7))
 
 ## -- 2018
 x2018 <- readxl::read_xlsx("2018.xlsx", skip = 1)
@@ -149,7 +149,7 @@ df_2018 <- x2018 %>%
   ) %>%
   mutate(Mês = tolower(Mês),
          Data = dmy(paste0("01 ", Mês, " 2018"), locale = "pt_BR"))
-df_2018 <- df_2018 %>% mutate(Municipio = stringr::str_sub(Municipio, 6))
+df_2018 <- df_2018 %>% mutate(Municipio = stringr::str_sub(Municipio, 7))
 
 ## -- 2017
 x2017 <- readxl::read_xlsx("2017.xlsx", skip = 1)
@@ -170,7 +170,7 @@ df_2017 <- x2017 %>%
   ) %>%
   mutate(Mês = tolower(Mês),
          Data = dmy(paste0("01 ", Mês, " 2017"), locale = "pt_BR"))
-df_2017 <- df_2017 %>% mutate(Municipio = stringr::str_sub(Municipio, 6))
+df_2017 <- df_2017 %>% mutate(Municipio = stringr::str_sub(Municipio, 7))
 
 ## -- 2016
 arquivo <- "2016.xlsx"
@@ -215,4 +215,29 @@ df_2015$Valor <- as.numeric(df_2015$Valor)
 `Historico ICMS 2015-2023` <- bind_rows(df_2015,df_2016,df_2017,df_2018,df_2019,df_2020,df_2021,df_2022,df_2023)
 ICMS <- bind_rows(`Historico ICMS 2015-2023`, df_2024)
 writexl::write_xlsx(ICMS, "ICMS_total.xlsx")
+
+### ---- Tratar Municipios
+ibge <- readxl::read_xlsx("R:/14 Power Bi/1 Regionalização e Mapas/Municípios e Regiões 2.0.xlsx") 
+ibge <- ibge %>% 
+  select(IBGE...1, Municipio, `Nome sem acento`) %>% 
+  rename(Municipio1 = Municipio) %>% 
+  rename(Municipio = `Nome sem acento`)
+ICMS$Municipio <- gsub("SEM PEIXE", "SEM-PEIXE",ICMS$Municipio)
+ICMS$Municipio <- gsub("OLHOS D'AGUA", "OLHOS-D'AGUA",ICMS$Municipio)
+ICMS$Municipio <- gsub("SILVERANIA", "SILVEIRANIA",ICMS$Municipio)
+ICMS$Municipio <- gsub("DONA EUZEBIA", "DONA EUSEBIA",ICMS$Municipio)
+ICMS$Municipio <- gsub("BRASOPOLIS", "BRAZOPOLIS",ICMS$Municipio)
+ICMS$Municipio <- gsub("SANTA RITA DO IBITIPOCA", "SANTA RITA DE IBITIPOCA",ICMS$Municipio)
+ICMS$Municipio <- gsub("SAO THOME DAS LETRAS", "SAO TOME DAS LETRAS",ICMS$Municipio)
+
+ICMS_ <- merge(ICMS, ibge, by = "Municipio")
+writexl::write_xlsx(ICMS_, "ICMS_total.xlsx")
+
+ICMS_ANO <- ICMS_ %>% mutate(ano = lubridate::year(Data)) %>% 
+  group_by(ano, Municipio1) %>% 
+  summarise(Valor = sum(Valor, na.rm = TRUE)) %>% 
+  rename(Municipio = Municipio1)
+
+writexl::write_xlsx(ICMS_ANO, "ICMS_ANUAL.xlsx")
+
 
